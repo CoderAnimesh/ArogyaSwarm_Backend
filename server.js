@@ -20,8 +20,6 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
-    'https://arogyaswarm-backend.onrender.com', // Render backend (self-requests)
-    /\.onrender\.com$/,                          // Any Render-hosted frontend
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
