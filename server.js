@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -22,8 +23,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Serve static frontend files from 'frontend/dist' directory
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
+// Serve static frontend files only if dist folder exists (local full-stack mode)
+const distPath = path.join(__dirname, '../frontend/dist');
+const indexPath = path.join(distPath, 'index.html');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+}
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -39,9 +44,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'API is running' });
 });
 
-// Fallback to index.html for unregistered routes
+// Fallback: serve index.html if it exists (full-stack mode), else return JSON 404
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ error: 'Route not found' });
+  }
 });
 
 app.listen(PORT, () => {
