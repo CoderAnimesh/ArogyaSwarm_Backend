@@ -17,7 +17,12 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://arogyaswarm-backend.onrender.com', // Render backend (self-requests)
+    /\.onrender\.com$/,                          // Any Render-hosted frontend
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }));
@@ -42,6 +47,26 @@ app.use('/api/asha', ashaRoutes);
 // Database check schema (Optional placeholder to ensure routes are hit)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'API is running' });
+});
+
+// Debug endpoint: shows which env vars are loaded (safe — no secret values)
+app.get('/api/debug-env', async (req, res) => {
+  const { db } = require('./db');
+  const { sql } = require('drizzle-orm');
+  let dbStatus = 'untested';
+  try {
+    await db.execute(sql`SELECT 1`);
+    dbStatus = 'connected';
+  } catch (e) {
+    dbStatus = `failed: ${e.message}`;
+  }
+  res.json({
+    PORT: process.env.PORT || 'not set',
+    JWT_SECRET: process.env.JWT_SECRET ? '✅ set' : '❌ missing',
+    DATABASE_URL: process.env.DATABASE_URL ? '✅ set' : '❌ missing',
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY ? '✅ set' : '❌ missing',
+    dbConnection: dbStatus,
+  });
 });
 
 // Fallback: serve index.html if it exists (full-stack mode), else return JSON 404
